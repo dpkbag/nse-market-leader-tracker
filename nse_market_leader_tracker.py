@@ -23,7 +23,7 @@ class NSEMarketLeaderTracker:
         """Fetch top 10 gainers from NSE using nsefin library"""
         try:
             # Get pre-market data with all stocks
-            data = self.NSEClient()_info(category="All")
+            data = self.nse.get_pre_market_info(category="All")
             
             # Get top 10 by percentage change
             if 'pchange' in data.columns:
