@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 try:
-    import nsefin
+    from nsefin import NSEClient
 except ImportError:
     print("Warning: nsefin not installed. Install with: pip install nsefin")
 
@@ -17,18 +17,21 @@ class NSEMarketLeaderTracker:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
         self.history_file = self.data_dir / 'weekly_leaders.csv'
+        self.nse = NSEClient()
     
     def fetch_top_gainers(self):
         """Fetch top 10 gainers from NSE using nsefin library"""
         try:
-            from nsefin import nse_get_preopen_market
-            data = nse_get_preopen_market()
+            # Get pre-market data with all stocks
+            data = self.nse.get_pre_market_info(category="All")
             
+            # Get top 10 by percentage change
             if 'pchange' in data.columns:
                 gainers = data.nlargest(10, 'pchange')
-            elif 'percentchange' in data.columns:
-                gainers = data.nlargest(10, 'percentchange')
+            elif 'change' in data.columns:
+                gainers = data.nlargest(10, 'change')
             else:
+                print("Available columns:", data.columns.tolist())
                 gainers = data.head(10)
             
             return gainers
@@ -75,6 +78,7 @@ class NSEMarketLeaderTracker:
             print("No data for last 7 days")
             return None
         
+        # Try to identify symbol column
         symbol_col = None
         for col in ['symbol', 'Symbol', 'SYMBOL', 'Name', 'name']:
             if col in weekly_data.columns:
